@@ -1,0 +1,9 @@
+{
+  "name": "near-lake-raw-printer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "near-lake-framework": "^1.0.1"
+  }
+}
