@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "scripts": {
+    "start": "tsc && node index.js"
+  },
   "dependencies": {
     "near-lake-framework": "^1.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.6.4"
   }
 }
