@@ -1,5 +1,5 @@
 # WELLDONE Code Helper
-* Using NEAR Lake Framework to parse a public key to associated account ids
+* Using Lake Framework to parse a public key to associated account ids. Check the [docs](https://near-indexers.io/).
 
 ## How to start?
 1. Install Dependencies
