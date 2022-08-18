@@ -82,6 +82,7 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                     console.log(" signerPublicKey ", signerPublicKey);
 
                     // insert public key signer id
+                    // TODO: check already exist so that skipping auto increment primary key not happened
                     const receiptAfterPublicKeyInsert = await insertPublicKeySignerId(signerPublicKey);
                     console.log(" receiptAfterInsert ", receiptAfterPublicKeyInsert);
 
