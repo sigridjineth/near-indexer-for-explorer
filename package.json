@@ -2,9 +2,10 @@
   "name": "near-lake-raw-printer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "helper/mainnet.js",
   "scripts": {
-    "start": "tsc && node index.js"
+    "mainnet": "tsc && node helper/mainnet.js",
+    "testnet": "tsc && node helper/testnet.js"
   },
   "dependencies": {
     "mysql": "^2.18.1",

@@ -91,4 +91,4 @@ lerna-debug.log
 .DS_Store
 Thumbs.db
 
-index.js
+mainnet.js
