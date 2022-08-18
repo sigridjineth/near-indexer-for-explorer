@@ -49,12 +49,13 @@ connection.query(
     "INSERT INTO PUBLIC_KEY (public_key_string) VALUES (\"007ac9d680d773d5e01ebaf418b6037409f27c132a4d5b22a48343214bc91568\") "
 )
 
-async function checkIfExists(signerId){
+async function getPublicKeyId(signerId){
     let sql = "SELECT * FROM PUBLIC_KEY WHERE public_key_string = " + "'" + signerId + "'" + ";";
     const results = await connection.promise().query(sql);
     console.log(" SIGNER ID ", signerId);
     console.log(" RESULTS ", results[0]);
-    return results[0] === [];
+
+    return results[0][0].id;
 }
 
 async function insertPublicKeySignerId(signerId) {
@@ -76,11 +77,9 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                     console.log(" signerId: ", signerId);
                     console.log(" signerPublicKey ", receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey);
 
-                    console.log("checkIfExists ", await checkIfExists(signerId));
-                    if (!await checkIfExists(signerId)) {
-                        const receiptAfterInsert = await insertPublicKeySignerId(signerId);
-                        console.log("receiptAfterInsert ")
-                    }
+                    const receiptAfterInsert = await insertPublicKeySignerId(signerId);
+                    console.log(" receiptAfterInsert ", receiptAfterInsert);
+                    console.log("getPublicKeyId", signerId, await getPublicKeyId(signerId));
                 }
             }
         }
