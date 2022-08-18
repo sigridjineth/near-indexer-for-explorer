@@ -7,6 +7,8 @@
     "start": "tsc && node index.js"
   },
   "dependencies": {
+    "mysql": "^2.18.1",
+    "mysql2": "^2.3.3",
     "near-lake-framework": "^1.0.1"
   },
   "devDependencies": {
