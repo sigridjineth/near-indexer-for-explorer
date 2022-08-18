@@ -10,7 +10,8 @@
   "dependencies": {
     "mysql": "^2.18.1",
     "mysql2": "^2.3.3",
-    "near-lake-framework": "^1.0.1"
+    "near-lake-framework": "^1.0.1",
+    "tslog": "^3.3.3"
   },
   "devDependencies": {
     "typescript": "^4.6.4"

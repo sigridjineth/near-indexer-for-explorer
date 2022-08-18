@@ -1,4 +1,6 @@
 import { startStream, types } from 'near-lake-framework';
+import { Logger } from "tslog";
+const log: Logger = new Logger();
 
 const lakeConfigMainnet: types.LakeConfig = {
     s3BucketName: "near-lake-data-mainnet",
@@ -14,6 +16,7 @@ const connection = mysql.createConnection({
     database: 'near_data',
 });
 
+log.info(" MySQL Connection Established For Mainnet Inserting >>>>>>>>>>>>>>>>>>>>>>>>>> ");
 connection.connect();
 
 // setting for mainnet
@@ -38,7 +41,7 @@ connection.query(
     "          address_id VARCHAR(100) NOT NULL DEFAULT '',\n" +
     "          FK_PUBLIC_KEY_ID INT,\n" +
     "          FOREIGN KEY (FK_PUBLIC_KEY_ID)\n" +
-    "          REFERENCES PUBLIC_KEY(id)\n" +
+    "          REFERENCES PUBLIC_KEY_MAINNET(id)\n" +
     ");"
 )
 
@@ -73,34 +76,38 @@ async function insertAddressIds(publicKeyId, signer) {
 
 async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void> {
     try {
-        console.log("Block Height >>>>>>>>>", streamerMessage.block.header.height);
+        log.info("Block Height >>>>>>>>>", streamerMessage.block.header.height);
+
         for (const shard of streamerMessage.shards) {
-            console.log(" shardId: ", shard.shardId);
+            log.info(" shardId: ", shard.shardId);
+
             for (const receiptExecutionOutcome of shard.receiptExecutionOutcomes) {
                 const action = receiptExecutionOutcome.receipt.receipt['Action'];
+
                 // if isAddKey
                 if (action.actions[0].AddKey) {
                     const signer = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
                     const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
-                    console.log(" signerId: ", signer);
-                    console.log(" signerPublicKey ", signerPublicKey);
+
+                    log.info(" signerId: ", signer);
+                    log.info(" signerPublicKey ", signerPublicKey);
 
                     // insert public key signer id
-                    const receiptAfterPublicKeyInsert = await insertPublicKeySignerId(signerPublicKey);
-                    console.log(" receiptAfterInsert ", receiptAfterPublicKeyInsert);
+                    await insertPublicKeySignerId(signerPublicKey);
 
                     // insert address ids
                     const publicKeyId = await getPublicKeyId(signerPublicKey);
-                    const receiptAfterAddressIdsInsert = await insertAddressIds(publicKeyId, signer);
-                    console.log(" receiptAfterAddressIdsInsert ", receiptAfterAddressIdsInsert);
+                    await insertAddressIds(publicKeyId, signer);
                 }
             }
         }
     } catch (e) {
-        console.log(e);
+        log.warn(e);
+        log.info("FAILED Block Height >>>>>>>>>", streamerMessage.block.header.height);
     }
 }
 
 (async () => {
+    log.info(" NEAR LAKE MAINNET STARTING >>>>>>>>>>>>>>>> PROOF OF CONCEPT FOR WELLDONE CODE")
     await startStream(lakeConfigMainnet, handleStreamerMessage);
 })();
