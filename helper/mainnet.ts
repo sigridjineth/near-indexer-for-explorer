@@ -5,7 +5,7 @@ const log: Logger = new Logger();
 const lakeConfigMainnet: types.LakeConfig = {
     s3BucketName: "near-lake-data-mainnet",
     s3RegionName: "eu-central-1",
-    startBlockHeight: 72110721,
+    startBlockHeight: 9820210,
 };
 
 const mysql = require('mysql2');
