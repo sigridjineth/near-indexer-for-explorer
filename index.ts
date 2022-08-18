@@ -1,6 +1,6 @@
 import { startStream, types } from 'near-lake-framework';
 
-const lakeConfig: types.LakeConfig = {
+const lakeConfigMainnet: types.LakeConfig = {
     s3BucketName: "near-lake-data-mainnet",
     s3RegionName: "eu-central-1",
     startBlockHeight: 72110721,
@@ -16,25 +16,26 @@ const connection = mysql.createConnection({
 
 connection.connect();
 
+// setting for mainnet
 connection.query(
-    "DROP TABLE IF EXISTS `ACCOUNT_IDS`"
+    "DROP TABLE IF EXISTS `ACCOUNT_IDS_MAINNET`"
 )
 
 connection.query(
-    "DROP TABLE IF EXISTS `PUBLIC_KEY`"
+    "DROP TABLE IF EXISTS `PUBLIC_KEY_MAINNET`"
 )
 
 connection.query(
-    "CREATE TABLE IF NOT EXISTS PUBLIC_KEY (\n" +
+    "CREATE TABLE IF NOT EXISTS PUBLIC_KEY_MAINNET (\n" +
     "         id    INT PRIMARY KEY AUTO_INCREMENT,\n" +
     "         public_key_string  VARCHAR(100)       NOT NULL DEFAULT ''\n" +
     "       );"
 )
 
 connection.query(
-    "CREATE TABLE IF NOT EXISTS ACCOUNT_IDS (\n" +
-    "          id    INT PRIMARY KEY,\n" +
-    "          address_id_string VARCHAR(100) NOT NULL DEFAULT '',\n" +
+    "CREATE TABLE IF NOT EXISTS ACCOUNT_IDS_MAINNET (\n" +
+    "          id    INT PRIMARY KEY AUTO_INCREMENT,\n" +
+    "          address_id VARCHAR(100) NOT NULL DEFAULT '',\n" +
     "          FK_PUBLIC_KEY_ID INT,\n" +
     "          FOREIGN KEY (FK_PUBLIC_KEY_ID)\n" +
     "          REFERENCES PUBLIC_KEY(id)\n" +
@@ -42,15 +43,15 @@ connection.query(
 )
 
 connection.query(
-    "CREATE UNIQUE INDEX UNIQUE_PUBLIC_KEY ON PUBLIC_KEY (public_key_string)"
+    "CREATE UNIQUE INDEX UNIQUE_PUBLIC_KEY ON PUBLIC_KEY_MAINNET (public_key_string)"
 )
 
-connection.query(
-    "INSERT INTO PUBLIC_KEY (public_key_string) VALUES (\"007ac9d680d773d5e01ebaf418b6037409f27c132a4d5b22a48343214bc91568\") "
-)
+// connection.query(
+//     "INSERT INTO PUBLIC_KEY_MAINNET (public_key_string) VALUES (\"007ac9d680d773d5e01ebaf418b6037409f27c132a4d5b22a48343214bc91568\") "
+// )
 
 async function getPublicKeyId(signerId){
-    let sql = "SELECT * FROM PUBLIC_KEY WHERE public_key_string = " + "'" + signerId + "'" + ";";
+    let sql = "SELECT * FROM PUBLIC_KEY_MAINNET WHERE public_key_string = " + "'" + signerId + "'" + ";";
     const results = await connection.promise().query(sql);
     console.log(" SIGNER ID ", signerId);
     console.log(" RESULTS ", results[0]);
@@ -59,7 +60,13 @@ async function getPublicKeyId(signerId){
 }
 
 async function insertPublicKeySignerId(signerId) {
-    let sql = "INSERT INTO PUBLIC_KEY (public_key_string) VALUES "+ "('" + signerId + "')" + ";";
+    let sql = "INSERT INTO PUBLIC_KEY_MAINNET (public_key_string) VALUES "+ "('" + signerId + "')" + ";";
+    const results = await connection.promise().execute(sql);
+    return results[0];
+}
+
+async function insertAddressIds(publicKeyId, signer) {
+    let sql = "INSERT INTO ACCOUNT_IDS_MAINNET (FK_PUBLIC_KEY_ID, address_id) VALUES "+ "(" + publicKeyId + "," + "'" + signer + "'" + ")";
     const results = await connection.promise().execute(sql);
     return results[0];
 }
@@ -73,21 +80,27 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                 const action = receiptExecutionOutcome.receipt.receipt['Action'];
                 // if isAddKey
                 if (action.actions[0].AddKey) {
-                    const signerId = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
-                    console.log(" signerId: ", signerId);
-                    console.log(" signerPublicKey ", receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey);
+                    const signer = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
+                    const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
+                    console.log(" signerId: ", signer);
+                    console.log(" signerPublicKey ", signerPublicKey);
 
-                    const receiptAfterInsert = await insertPublicKeySignerId(signerId);
-                    console.log(" receiptAfterInsert ", receiptAfterInsert);
-                    console.log("getPublicKeyId", signerId, await getPublicKeyId(signerId));
+                    // insert public key signer id
+                    const receiptAfterPublicKeyInsert = await insertPublicKeySignerId(signerPublicKey);
+                    console.log(" receiptAfterInsert ", receiptAfterPublicKeyInsert);
+
+                    // insert address ids
+                    const publicKeyId = await getPublicKeyId(signerPublicKey);
+                    const receiptAfterAddressIdsInsert = await insertAddressIds(publicKeyId, signer);
+                    console.log(" receiptAfterAddressIdsInsert ", receiptAfterAddressIdsInsert);
                 }
             }
         }
     } catch (e) {
-        console.log("^^", e);
+        console.log(e);
     }
 }
 
 (async () => {
-    await startStream(lakeConfig, handleStreamerMessage);
+    await startStream(lakeConfigMainnet, handleStreamerMessage);
 })();
