@@ -4,9 +4,9 @@
   "description": "",
   "main": "helper/mainnet.js",
   "scripts": {
-    "mainnet": "tsc && node dist/helper/mainnet.js",
-    "testnet": "tsc && node dist/helper/testnet.js",
-    "server": "tsc && node dist/server/index.js"
+    "mainnet": "tsc && pm2 start dist/helper/mainnet.js",
+    "testnet": "tsc && pm2 start dist/helper/testnet.js",
+    "server": "tsc && pm2 start dist/server/index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -15,6 +15,7 @@
     "mysql2": "^2.3.3",
     "near-lake-framework": "^1.0.1",
     "nodemon": "^2.0.19",
+    "pm2": "^5.2.0",
     "tslog": "^3.3.3"
   },
   "devDependencies": {
