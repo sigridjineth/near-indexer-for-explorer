@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES2015",
-      "dom"
-    ]
-  }
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist"
+  },
+  "lib": ["es2015", "dom"]
 }

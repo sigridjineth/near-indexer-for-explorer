@@ -4,13 +4,17 @@
   "description": "",
   "main": "helper/mainnet.js",
   "scripts": {
-    "mainnet": "tsc && node helper/mainnet.js",
-    "testnet": "tsc && node helper/testnet.js"
+    "mainnet": "tsc && node dist/helper/mainnet.js",
+    "testnet": "tsc && node dist/helper/testnet.js",
+    "server": "tsc && node dist/server/index.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
     "mysql": "^2.18.1",
     "mysql2": "^2.3.3",
     "near-lake-framework": "^1.0.1",
+    "nodemon": "^2.0.19",
     "tslog": "^3.3.3"
   },
   "devDependencies": {
