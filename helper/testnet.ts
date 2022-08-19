@@ -58,48 +58,74 @@ async function getPublicKeyId(signerId){
     return results[0][0].id;
 }
 
+async function removeAllAddressIdsAfterJoiningPublicKey(public_key_string) {
+    let sql = "DELETE FROM ACCOUNT_IDS_TESTNET WHERE FK_PUBLIC_KEY_ID = " + "(SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + public_key_string + "'" + ");";
+    const results = await connection.promise().execute(sql);
+    return results[0];
+}
+
 async function insertPublicKeySignerId(signerId) {
     let sql = "INSERT INTO PUBLIC_KEY_TESTNET (public_key_string) VALUES "+ "('" + signerId + "')" + ";";
     const results = await connection.promise().execute(sql);
     return results[0];
 }
 
-async function insertAddressIds(publicKeyId, signer) {
-    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (FK_PUBLIC_KEY_ID, address_id) VALUES "+ "(" + publicKeyId + "," + "'" + signer + "'" + ")";
+async function insertAddressIds(addressId) {
+    const lastInsertIdBefore = await connection.promise().execute("SELECT LAST_INSERT_ID()");
+    const lastInsertId = lastInsertIdBefore[0][0]['LAST_INSERT_ID()'];
+    log.debug(" >>>>>>>>> LASTINSERTID >>>>>>>>>>>>>>> ", lastInsertId);
+    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (address_id, FK_PUBLIC_KEY_ID) VALUES "+ "('" + addressId + "', " + lastInsertId + ")";
     const results = await connection.promise().execute(sql);
     return results[0];
 }
 
 async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void> {
     try {
-        log.info("Block Height >>>>>>>>>", streamerMessage.block.header.height);
+        // log.info("Block Height >>>>>>>>>", streamerMessage.block.header.height);
 
         for (const shard of streamerMessage.shards) {
-            log.info(" shardId: ", shard.shardId);
+            // log.info(" shardId: ", shard.shardId);
 
             for (const receiptExecutionOutcome of shard.receiptExecutionOutcomes) {
-                const action = receiptExecutionOutcome.receipt.receipt['Action'];
+                const actionList = receiptExecutionOutcome.receipt.receipt['Action'];
 
-                // if isAddKey
-                if (action.actions[0].AddKey) {
-                    const signer = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
-                    const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
+                // if there is some actions
+                if (actionList.actions !== []) {
 
-                    log.debug(" signerId: ", signer);
-                    log.debug(" signerPublicKey ", signerPublicKey);
+                    for (const action of actionList.actions) {
+                        // if that is AddKey action
+                        if (action.AddKey) {
+                            log.debug("ADD KEY >>>>>>>>>>>>>>>>>>>>")
 
-                    // insert public key signer id
-                    // TODO: check already exist so that skipping auto increment primary key not happened
-                    await insertPublicKeySignerId(signerPublicKey);
+                            const addressId = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
+                            const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
 
-                    // insert address ids
-                    const publicKeyId = await getPublicKeyId(signerPublicKey);
-                    await insertAddressIds(publicKeyId, signer);
+                            log.info(" addressId: ", addressId);
+                            log.info(" signerPublicKey ", signerPublicKey);
+
+                            await insertPublicKeySignerId(signerPublicKey);
+                            await insertAddressIds(addressId);
+                        }
+
+                        // if that is DeleteKey action
+                        if (action.DeleteKey) {
+                            log.debug("DELETE KEY >>>>>>>>>>>>>>>>>>>>")
+
+                            const signer = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
+                            const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
+
+                            log.info(" signerId: ", signer);
+                            log.info(" signerPublicKey ", signerPublicKey);
+
+                            await removeAllAddressIdsAfterJoiningPublicKey(signerPublicKey);
+                        }
+                    }
                 }
             }
         }
     } catch (e) {
         log.warn(e);
+        log.info("FAILED Block Height >>>>>>>>>", streamerMessage.block.header.height);
     }
 }
 
