@@ -11,7 +11,7 @@ const lakeConfigMainnet: types.LakeConfig = {
 const mysql = require('mysql2');
 const connection = mysql.createConnection({
     host: 'localhost',
-    user: 'root',
+    user: 'test',
     password: 'password',
     database: 'near_data',
 });
