@@ -70,11 +70,18 @@ async function insertPublicKeySignerId(signerId) {
     return results[0];
 }
 
-async function insertAddressIds(addressId) {
+async function insertAddressIds(publicKeyId, addressId) {
+    let sql = "INSERT INTO ACCOUNT_IDS_MAINNET (FK_PUBLIC_KEY_ID, address_id) VALUES "+ "(" + publicKeyId + "," + "'" + addressId + "'" + ")";
+    const results = await connection.promise().execute(sql);
+    return results[0];
+}
+
+
+async function insertNewAddressIds(addressId) {
     const lastInsertIdBefore = await connection.promise().execute("SELECT LAST_INSERT_ID()");
     const lastInsertId = lastInsertIdBefore[0][0]['LAST_INSERT_ID()'];
     log.debug(" >>>>>>>>> LASTINSERTID >>>>>>>>>>>>>>> ", lastInsertId);
-    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (address_id, FK_PUBLIC_KEY_ID) VALUES "+ "('" + addressId + "', " + lastInsertId + ")";
+    let sql = "INSERT INTO ACCOUNT_IDS_MAINNET (address_id, FK_PUBLIC_KEY_ID) VALUES "+ "('" + addressId + "', " + lastInsertId + ")";
     const results = await connection.promise().execute(sql);
     return results[0];
 }
@@ -103,8 +110,15 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                             log.info(" addressId: ", addressId);
                             log.info(" signerPublicKey ", signerPublicKey);
 
-                            await insertPublicKeySignerId(signerPublicKey);
-                            await insertAddressIds(addressId);
+                            try {
+                                await insertPublicKeySignerId(signerPublicKey);
+                                await insertNewAddressIds(addressId);
+                            } catch (e) {
+                                log.error("Error inserting public key ", e);
+
+                                const publicKeyId = await getPublicKeyId(signerPublicKey);
+                                await insertAddressIds(publicKeyId, addressId);
+                            }
                         }
 
                         // if that is DeleteKey action
