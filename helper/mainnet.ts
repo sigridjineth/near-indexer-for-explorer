@@ -112,13 +112,11 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
 
                             try {
                                 await insertPublicKeySignerId(signerPublicKey);
-                                await insertNewAddressIds(addressId);
                             } catch (e) {
-                                log.error("Error inserting public key ", e);
-
-                                const publicKeyId = await getPublicKeyId(signerPublicKey);
-                                await insertAddressIds(publicKeyId, addressId);
+                                log.error("Duplicate Entry");
                             }
+                            const publicKeyId = await getPublicKeyId(signerPublicKey);
+                            await insertAddressIds(publicKeyId, addressId);
                         }
 
                         // if that is DeleteKey action

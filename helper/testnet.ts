@@ -76,16 +76,6 @@ async function insertAddressIds(publicKeyId, addressId) {
     return results[0];
 }
 
-
-async function insertNewAddressIds(addressId) {
-    const lastInsertIdBefore = await connection.promise().execute("SELECT LAST_INSERT_ID()");
-    const lastInsertId = lastInsertIdBefore[0][0]['LAST_INSERT_ID()'];
-    log.debug(" >>>>>>>>> LASTINSERTID >>>>>>>>>>>>>>> ", lastInsertId);
-    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (address_id, FK_PUBLIC_KEY_ID) VALUES "+ "('" + addressId + "', " + lastInsertId + ")";
-    const results = await connection.promise().execute(sql);
-    return results[0];
-}
-
 async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void> {
     try {
         // log.info("Block Height >>>>>>>>>", streamerMessage.block.header.height);
@@ -112,13 +102,11 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
 
                             try {
                                 await insertPublicKeySignerId(signerPublicKey);
-                                await insertNewAddressIds(addressId);
                             } catch (e) {
-                                log.error("Error inserting public key ", e);
-
-                                const publicKeyId = await getPublicKeyId(signerPublicKey);
-                                await insertAddressIds(publicKeyId, addressId);
+                                log.error("Duplicate Entry");
                             }
+                            const publicKeyId = await getPublicKeyId(signerPublicKey);
+                            await insertAddressIds(publicKeyId, addressId);
                         }
 
                         // if that is DeleteKey action
