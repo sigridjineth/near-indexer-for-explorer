@@ -58,8 +58,8 @@ async function getPublicKeyId(signerId){
     return results[0][0].id;
 }
 
-async function removeAllAddressIdsAfterJoiningPublicKey(public_key_string) {
-    let sql = "DELETE FROM ACCOUNT_IDS_TESTNET WHERE FK_PUBLIC_KEY_ID = " + "(SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + public_key_string + "'" + ");";
+async function removeAllAddressIdsAfterJoiningPublicKey(public_key_string, addressId) {
+    let sql = "DELETE FROM ACCOUNT_IDS_TESTNET WHERE FK_PUBLIC_KEY_ID = " + "(SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + public_key_string + "'" + ")" + "AND address_id = " + "'" + addressId + "'" + ";";
     const results = await connection.promise().execute(sql);
     return results[0];
 }
@@ -113,13 +113,13 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                         if (action.DeleteKey) {
                             log.debug("DELETE KEY >>>>>>>>>>>>>>>>>>>>")
 
-                            const signer = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
+                            const addressId = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
                             const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
 
-                            log.info(" signerId: ", signer);
+                            log.info(" signerId: ", addressId);
                             log.info(" signerPublicKey ", signerPublicKey);
 
-                            await removeAllAddressIdsAfterJoiningPublicKey(signerPublicKey);
+                            await removeAllAddressIdsAfterJoiningPublicKey(signerPublicKey, addressId);
                         }
                     }
                 }

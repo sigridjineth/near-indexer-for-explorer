@@ -17,6 +17,7 @@
     "near-lake-framework": "^1.0.1",
     "nodemon": "^2.0.19",
     "pm2": "^5.2.0",
+    "redis": "^4.2.0",
     "tslog": "^3.3.3"
   },
   "devDependencies": {
