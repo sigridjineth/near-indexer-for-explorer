@@ -92,13 +92,15 @@ async function insertNewAddressIds(addressId) {
 
 async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void> {
     try {
-        // log.info("Block Height >>>>>>>>>", streamerMessage.block.header.height);
+        log.info("Block Height >>>>>>>>>", streamerMessage.block.header.height);
 
         for (const shard of streamerMessage.shards) {
-            // log.info(" shardId: ", shard.shardId);
+            log.info(" shardId: ", shard.shardId);
 
             for (const receiptExecutionOutcome of shard.receiptExecutionOutcomes) {
                 const actionList = receiptExecutionOutcome.receipt.receipt['Action'];
+
+                log.info(" actionList: ", actionList, streamerMessage.block.header.height, shard.shardId);
 
                 // if there is some actions
                 if (actionList.actions !== []) {
@@ -106,18 +108,18 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                     for (const action of actionList.actions) {
                         // if that is AddKey action
                         if (action.AddKey) {
-                            log.debug("ADD KEY >>>>>>>>>>>>>>>>>>>>")
+                            log.debug("ADD KEY >>>>>>>>>>>>>>>>>>>>", streamerMessage.block.header.height, shard.shardId)
 
                             const addressId = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
                             const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
 
-                            log.info(" addressId: ", addressId);
-                            log.info(" signerPublicKey ", signerPublicKey);
+                            log.info(" addressId: ", addressId, streamerMessage.block.header.height, shard.shardId);
+                            log.info(" signerPublicKey ", signerPublicKey, streamerMessage.block.header.height, shard.shardId);
 
                             try {
                                 await insertPublicKeySignerId(signerPublicKey);
                             } catch (e) {
-                                log.error("Duplicate Entry");
+                                log.error("Duplicate Entry", streamerMessage.block.header.height, shard.shardId);
                             }
                             const publicKeyId = await getPublicKeyId(signerPublicKey);
                             await insertAddressIds(publicKeyId, addressId);
@@ -130,8 +132,8 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                             const addressId = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
                             const signerPublicKey = receiptExecutionOutcome.receipt.receipt['Action'].signerPublicKey;
 
-                            log.info(" signerId: ", addressId);
-                            log.info(" signerPublicKey ", signerPublicKey);
+                            log.info(" DELETE KEY signerId: ", addressId, streamerMessage.block.header.height, shard.shardId);
+                            log.info(" DELETE KEY signerPublicKey ", signerPublicKey, streamerMessage.block.header.height, shard.shardId);
 
                             await removeAllAddressIdsAfterJoiningPublicKey(signerPublicKey, addressId);
                         }
