@@ -57,7 +57,8 @@ app.get('/find/mainnet', async (req: Request, res: Response) => {
 app.get('/find/testnet', async (req: Request, res: Response) => {
     log.debug(" >>>>>>>>> PUBLIC KEY", req.query.public_key);
     try {
-        const results = await findTestnetAccountIds(req.query.public_key);
+        let results = await findMainnetAccountIds(req.query.public_key);
+        results = [...new Set(results.map(result => result.address_id))];
         log.debug(" >>>>>>>>> RESULTS", results);
         res.send({
             status: 200,
