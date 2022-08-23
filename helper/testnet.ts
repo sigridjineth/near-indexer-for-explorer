@@ -6,14 +6,14 @@ const log: Logger = new Logger();
 const lakeConfigTestnet: types.LakeConfig = {
     s3BucketName: "near-lake-data-testnet",
     s3RegionName: "eu-central-1",
-    startBlockHeight: 42488000,
+    startBlockHeight: 42376888,
 };
 
 const mysql = require('mysql2');
 const connection = mysql.createConnection({
     host: 'localhost',
-    user: 'root',
-    password: 'password',
+    user: process.env.MYSQL_DID,
+    password: process.env.MYSQL_PWD,
     database: 'near_data',
 });
 
