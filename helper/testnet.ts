@@ -56,7 +56,7 @@ connection.query(
 )
 
 connection.query(
-    "CREATE UNIQUE INDEX UNIQUE_ADDRESS_ID_FK_PUBLIC_KEY_ID ON ACCOUNT_IDS_TESTNET (address_id, FK_PUBLIC_KEY_ID)"
+    "CREATE UNIQUE INDEX UNIQUE_ADDRESS_ID_FK_PUBLIC_KEY_ID ON ACCOUNT_IDS_TESTNET (address_id, FK_PUBLIC_KEY_ID, is_deleted);"
 )
 
 async function getPublicKeyId(signerId){
@@ -90,10 +90,10 @@ async function insertPublicKeySignerId(signerId, blockHeight) {
 }
 
 async function insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, saveType) {
-    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (FK_PUBLIC_KEY_ID, address_id, block_height, receipt_hash, save_type) VALUES "
-        + "(" + publicKeyId + ", " + "'" + addressId + "', " + blockHeight + ", " + "'" + receiptHash + "', " + "'" + saveType + "')" + ";";
+    const NOT_DELETED = 0;
+    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (FK_PUBLIC_KEY_ID, address_id, block_height, receipt_hash, save_type, is_deleted) VALUES " + "(" + publicKeyId + ", " + "'" + addressId + "', " + blockHeight + ", " + "'" + receiptHash + "', " + "'" + saveType + "', " + NOT_DELETED + ")" + ";";
     const results = await connection.promise().execute(sql);
-    log.debug(" INSERT ADDRESS IDS RESULTS", results, blockHeight);
+    log.debug("INSERT ADDRESS IDS RESULTS", results);
     return results[0];
 }
 
