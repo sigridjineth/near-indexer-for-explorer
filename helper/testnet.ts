@@ -43,7 +43,6 @@ connection.query(
     "          FK_PUBLIC_KEY_ID INT,\n" +
     "          block_height BIGINT NOT NULL,\n" +
     "          receipt_hash VARCHAR(100),\n" +
-    "          tx_hash VARCHAR(100),\n" +
     "          save_type VARCHAR(100) NOT NULL,\n" +
     "          is_deleted BOOLEAN NOT NULL DEFAULT 0," +
     "          FOREIGN KEY (FK_PUBLIC_KEY_ID)\n" +
@@ -89,9 +88,9 @@ async function insertPublicKeySignerId(signerId, blockHeight) {
     return results[0];
 }
 
-async function insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, txHash, saveType) {
-    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (FK_PUBLIC_KEY_ID, address_id, block_height, receipt_hash, tx_hash, save_type) VALUES "
-        + "(" + publicKeyId + ", " + "'" + addressId + "', " + blockHeight + ", " + "'" + receiptHash + "', " + "'" + txHash + "', " + "'" + saveType + "')" + ";";
+async function insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, saveType) {
+    let sql = "INSERT INTO ACCOUNT_IDS_TESTNET (FK_PUBLIC_KEY_ID, address_id, block_height, receipt_hash, save_type) VALUES "
+        + "(" + publicKeyId + ", " + "'" + addressId + "', " + blockHeight + ", " + "'" + receiptHash + "', " + "'" + saveType + "')" + ";";
     const results = await connection.promise().execute(sql);
     log.debug(" INSERT ADDRESS IDS RESULTS", results, blockHeight);
     return results[0];
@@ -104,43 +103,6 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
 
         for (const shard of streamerMessage.shards) {
             log.info(" shardId: ", shard.shardId);
-
-            // for (const state of shard.stateChanges) {
-            //     const txHash = state['cause']['txHash'];
-            //     const receiptHash = state['cause']['receiptHash'];
-            //
-            //     log.info(" STATE ", state, " BLOCK HEIGHT ", blockHeight, " RECEIPT HASH ", receiptHash);
-            //
-            //     if (state['type'] === 'access_key_update') {
-            //         log.info("ACCESS_KEY_UPDATE");
-            //
-            //         const saveType = state['change']['accessKey']['permission']['FunctionCall'] ? 'FUNCTION_CALL' :
-            //             state['change']['accessKey']['permission'] === 'FullAccess' ? 'FULL_ACCESS' : 'ERROR';
-            //         const addressId = state['change']['accountId'];
-            //         const signerPublicKey = state['change']['publicKey'];
-            //
-            //         log.info(" ACCOUNT ID ", addressId, " PUBLIC KEY ", signerPublicKey, " BLOCK HEIGHT ", blockHeight);
-            //
-            //         try {
-            //             await insertPublicKeySignerId(signerPublicKey, blockHeight);
-            //         } catch (e) {
-            //             log.error("Duplicate Entry", streamerMessage.block.header.height, shard.shardId);
-            //         }
-            //         const publicKeyId = await getPublicKeyId(signerPublicKey);
-            //         await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, txHash, saveType);
-            //     }
-            //
-            //     if (state['type'] === 'access_key_deletion') {
-            //         log.info("ACCESS_KEY_DELETION");
-            //
-            //         const addressId = state['change']['accountId'];
-            //         const signerPublicKey = state['change']['publicKey'];
-            //
-            //         log.info(" ACCOUNT ID ", addressId, " PUBLIC KEY ", signerPublicKey, " BLOCK HEIGHT ", streamerMessage.block.header.height);
-            //
-            //         await removeAllAddressIdsAfterJoiningPublicKey(signerPublicKey, addressId);
-            //     }
-            // }
 
             for (const receiptExecutionOutcome of shard.receiptExecutionOutcomes) {
                 const actionList = receiptExecutionOutcome.receipt.receipt['Action'];
@@ -157,8 +119,7 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                         if (action === 'CreateAccount') {
                             log.debug(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> CREATE ACCOUNT >>>>>>>>>>>>>>>>>>>>>>>>>>>> ")
                             for (const state of shard.stateChanges) {
-                                const txHash = state['cause']['txHash'];
-                                const receiptHash = state['cause']['receiptHash'];
+                                const receiptHash = receiptExecutionOutcome.receipt.receiptId;
 
                                 log.info(" STATE ", state, " BLOCK HEIGHT ", blockHeight, " RECEIPT HASH ", receiptHash);
 
@@ -178,7 +139,7 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                                         log.error("Duplicate Entry", streamerMessage.block.header.height, shard.shardId);
                                     }
                                     const publicKeyId = await getPublicKeyId(signerPublicKey);
-                                    await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, txHash, saveType);
+                                    await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, saveType);
                                 }
                             }
                             break;
@@ -204,7 +165,7 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                             const receiptHash = receiptExecutionOutcome.receipt.receiptId;
                             const saveType = action.AddKey.accessKey.permission.toString() === 'FullAccess' ? 'FullAccess' : 'FunctionCall';
 
-                            await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, '', saveType);
+                            await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, saveType);
                         }
 
                         // if that is DeleteKey action
