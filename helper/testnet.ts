@@ -43,6 +43,7 @@ connection.query(
     "          FK_PUBLIC_KEY_ID INT,\n" +
     "          block_height BIGINT NOT NULL,\n" +
     "          receipt_hash VARCHAR(100),\n" +
+    "          delete_receipt_hash VARCHAR(100),\n" +
     "          save_type VARCHAR(100) NOT NULL,\n" +
     "          is_deleted BOOLEAN NOT NULL DEFAULT 0," +
     "          FOREIGN KEY (FK_PUBLIC_KEY_ID)\n" +
@@ -74,10 +75,10 @@ async function removeAllAddressIdsAfterJoiningPublicKey(public_key_string, addre
     return results[0];
 }
 
-async function softDeleteAllAddressIdsAfterJoiningPublicKey(public_key_string, addressId) {
-    let sql = "UPDATE ACCOUNT_IDS_TESTNET SET is_deleted = 1 WHERE FK_PUBLIC_KEY_ID = " + "(SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + public_key_string + "'" + ")" + "AND address_id = " + "'" + addressId + "'" + ";";
+async function softDeleteAllAddressIdsAfterJoiningPublicKey(public_key_string, addressId, deleteReceiptHash) {
+    let sql = "UPDATE ACCOUNT_IDS_TESTNET SET is_deleted = 1, delete_receipt_hash = " + "'" + deleteReceiptHash + "'" + " WHERE FK_PUBLIC_KEY_ID = " + "(SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + public_key_string + "'" + ")" + "AND address_id = " + "'" + addressId + "'" + ";";
     const results = await connection.promise().execute(sql);
-    log.debug("SOFT DELETE RESULTS ", results);
+    log.debug("SOFT DELETE RESULTS", results);
     return results[0];
 }
 
@@ -174,11 +175,12 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
 
                             const addressId = receiptExecutionOutcome.receipt.receipt['Action'].signerId;
                             const signerPublicKey = action.DeleteKey.publicKey;
+                            const deleteReceiptHash = receiptExecutionOutcome.receipt.receiptId;
 
                             log.info(" signerId: ", addressId, streamerMessage.block.header.height, shard.shardId);
                             log.info(" signerPublicKey ", signerPublicKey, streamerMessage.block.header.height, shard.shardId);
 
-                            await softDeleteAllAddressIdsAfterJoiningPublicKey(signerPublicKey, addressId);
+                            await softDeleteAllAddressIdsAfterJoiningPublicKey(signerPublicKey, addressId, deleteReceiptHash);
                         }
                     }
                 }
