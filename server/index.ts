@@ -14,8 +14,8 @@ app.use(express.urlencoded({ extended: true }));
 const mysql = require('mysql2');
 const connection = mysql.createConnection({
     host: 'localhost',
-    user: 'test',
-    password: 'password',
+    user: process.env.MYSQL_DID,
+    password: process.env.MYSQL_PWD,
     database: 'near_data',
 });
 
@@ -34,44 +34,28 @@ async function findTestnetAccountIds(publicKeyString: string) {
     return results[0];
 }
 
-app.get('/find/mainnet', async (req: Request, res: Response) => {
+app.get('/account_id/mainnet', async (req: Request, res: Response) => {
     log.debug(" >>>>>>>>> PUBLIC KEY", req.query.public_key);
     try {
         let results = await findMainnetAccountIds(req.query.public_key);
         results = [...new Set(results.map(result => result.address_id))];
-        res.send({
-            status: 200,
-            network: "mainnet",
-            results
-        });
+        res.send(results);
     } catch (error) {
         log.error(" >>>>>>>>> ERROR", error);
-        res.send({
-            status: 500,
-            network: "mainnet",
-            error
-        });
+        res.send(error);
     }
 });
 
-app.get('/find/testnet', async (req: Request, res: Response) => {
+app.get('/account_id/testnet', async (req: Request, res: Response) => {
     log.debug(" >>>>>>>>> PUBLIC KEY", req.query.public_key);
     try {
         let results = await findTestnetAccountIds(req.query.public_key);
         results = [...new Set(results.map(result => result.address_id))];
         log.debug(" >>>>>>>>> RESULTS", results);
-        res.send({
-            status: 200,
-            network: "testnet",
-            results
-        });
+        res.send(results);
     } catch (error) {
         log.error(" >>>>>>>>> ERROR", error);
-        res.send({
-            status: 500,
-            network: "testnet",
-            error
-        });
+        res.send(error);
     }
 });
 
