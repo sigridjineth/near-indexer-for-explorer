@@ -1,8 +1,9 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, {Request, Response} from 'express';
+import {Logger} from "tslog";
+
 const app = express();
 const cors = require('cors')
 
-import { Logger } from "tslog";
 const log: Logger = new Logger({ name: " NEAR LAKE SERVER IS NOW RUNNING >>>>>>>>>>>>>> WELLDONE CODE" });
 
 app.use(express.json());
@@ -19,26 +20,43 @@ const connection = mysql.createConnection({
     database: 'near_data',
 });
 
+const MAINNET_SUFFIX = ".near";
+const TESTNET_SUFFIX = ".testnet";
+
+const MAINNET_PREFIX = "mainnet:";
+const TESTNET_PREFIX = "testnet:";
+
 log.info(" MySQL Connection Established For Mainnet Inserting >>>>>>>>>>>>>>>>>>>>>>>>>> ");
 connection.connect();
 
 async function findMainnetAccountIds(publicKeyString: string) {
-    let sql = "SELECT address_id FROM ACCOUNT_IDS_MAINNET WHERE FK_PUBLIC_KEY_ID = (SELECT id FROM PUBLIC_KEY_MAINNET WHERE public_key_string = " + "'" + publicKeyString + "'" + ");";
+    let sql = "SELECT address_id FROM ACCOUNT_IDS_MAINNET WHERE is_deleted = 0 AND FK_PUBLIC_KEY_ID = (SELECT id FROM PUBLIC_KEY_MAINNET WHERE public_key_string = " + "'" + publicKeyString + "'" + ");";
     const results = await connection.promise().query(sql);
     return results[0];
 }
 
 async function findTestnetAccountIds(publicKeyString: string) {
-    let sql = "SELECT address_id FROM ACCOUNT_IDS_TESTNET WHERE FK_PUBLIC_KEY_ID = (SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + publicKeyString + "'" + ");";
+    let sql = "SELECT address_id FROM ACCOUNT_IDS_TESTNET WHERE is_deleted = 0 AND FK_PUBLIC_KEY_ID = (SELECT id FROM PUBLIC_KEY_TESTNET WHERE public_key_string = " + "'" + publicKeyString + "'" + ");";
     const results = await connection.promise().query(sql);
     return results[0];
 }
 
+const addNetworkTypePrefixToResults = (results, networkSuffix, networkPrefix) => {
+    return [...new Set(results.map(result => {
+        log.debug(" addNetworkTypePrefixToResults ", result);
+        return result['address_id'].includes(networkSuffix) ? result.address_id : networkPrefix + result.address_id
+    }))]
+};
+
 app.get('/account_id/mainnet', async (req: Request, res: Response) => {
-    log.debug(" >>>>>>>>> PUBLIC KEY", req.query.public_key);
+    log.debug("PUB KEY", req.query.public_key);
     try {
-        let results = await findMainnetAccountIds(req.query.public_key);
-        results = [...new Set(results.map(result => result.address_id))];
+        const results = addNetworkTypePrefixToResults(
+            await findMainnetAccountIds(req.query.public_key),
+            MAINNET_SUFFIX,
+            MAINNET_PREFIX
+        );
+        log.debug(" RESULTS ", results);
         res.send(results);
     } catch (error) {
         log.error(" >>>>>>>>> ERROR", error);
@@ -49,8 +67,11 @@ app.get('/account_id/mainnet', async (req: Request, res: Response) => {
 app.get('/account_id/testnet', async (req: Request, res: Response) => {
     log.debug(" >>>>>>>>> PUBLIC KEY", req.query.public_key);
     try {
-        let results = await findTestnetAccountIds(req.query.public_key);
-        results = [...new Set(results.map(result => result.address_id))];
+        const results = addNetworkTypePrefixToResults(
+            await findTestnetAccountIds(req.query.public_key),
+            TESTNET_SUFFIX,
+            TESTNET_PREFIX
+        );
         log.debug(" >>>>>>>>> RESULTS", results);
         res.send(results);
     } catch (error) {
