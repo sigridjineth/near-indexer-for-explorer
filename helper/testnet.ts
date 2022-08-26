@@ -166,7 +166,7 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                             const receiptHash = receiptExecutionOutcome.receipt.receiptId;
                             const saveType = action.AddKey.accessKey.permission.toString() === 'FullAccess' ? 'FullAccess' : 'FunctionCall';
 
-                            await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, saveType);
+                            await insertAddressIds(publicKeyId, addressId, receiptExecutionOutcome.executionOutcome.blockHash, receiptHash, saveType);
                         }
 
                         // if that is DeleteKey action
