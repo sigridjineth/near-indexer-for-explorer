@@ -140,7 +140,7 @@ async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Pr
                                         log.error("Duplicate Entry", streamerMessage.block.header.height, shard.shardId);
                                     }
                                     const publicKeyId = await getPublicKeyId(signerPublicKey);
-                                    await insertAddressIds(publicKeyId, addressId, receiptExecutionOutcome.executionOutcome.blockHash, receiptHash, saveType);
+                                    await insertAddressIds(publicKeyId, addressId, blockHeight, receiptHash, saveType);
                                 }
                             }
                             break;
