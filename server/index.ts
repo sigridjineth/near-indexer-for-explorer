@@ -62,8 +62,10 @@ async function getLastTestnetAccountIdsBlockHeight() {
 
 app.get('/health/mainnet', async (req: Request, res: Response) => {
    try {
-       const results = await getLastMainnetAccountIdsBlockHeight();
-       res.send(results);
+       const height = await getLastMainnetAccountIdsBlockHeight();
+       res.send({
+           height
+       })
    } catch (error) {
        log.error(" error ", error);
        res.send(error);
@@ -72,8 +74,10 @@ app.get('/health/mainnet', async (req: Request, res: Response) => {
 
 app.get('/health/testnet', async(req: Request, res: Response) => {
     try {
-        const results = await getLastTestnetAccountIdsBlockHeight();
-        res.send(results);
+        const height = await getLastTestnetAccountIdsBlockHeight();
+        res.send({
+            height
+        })
     } catch (error) {
         log.error(" error ", error);
         res.send(error);
