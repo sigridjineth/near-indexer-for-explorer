@@ -48,6 +48,38 @@ const addNetworkTypePrefixToResults = (results, networkSuffix, networkPrefix) =>
     }))]
 };
 
+async function getLastMainnetAccountIdsBlockHeight() {
+    let sql = "SELECT MAX(block_height) AS block_height FROM ACCOUNT_IDS_MAINNET;";
+    const results = await connection.promise().query(sql);
+    return results[0][0].block_height;
+}
+
+async function getLastTestnetAccountIdsBlockHeight() {
+    let sql = "SELECT MAX(block_height) AS block_height FROM ACCOUNT_IDS_TESTNET;";
+    const results = await connection.promise().query(sql);
+    return results[0][0].block_height;
+}
+
+app.get('/health/mainnet', async (req: Request, res: Response) => {
+   try {
+       const results = await getLastMainnetAccountIdsBlockHeight();
+       res.send(results);
+   } catch (error) {
+       log.error(" error ", error);
+       res.send(error);
+   }
+});
+
+app.get('/health/testnet', async(req: Request, res: Response) => {
+    try {
+        const results = await getLastTestnetAccountIdsBlockHeight();
+        res.send(results);
+    } catch (error) {
+        log.error(" error ", error);
+        res.send(error);
+    }
+});
+
 app.get('/account_id/mainnet', async (req: Request, res: Response) => {
     log.debug("PUB KEY", req.query.public_key);
     try {
